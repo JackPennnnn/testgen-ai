@@ -54,7 +54,7 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
         // 生成测试代码
         const outputPath = path.join(output,
             `${path.basename(source, '.js')}.test.js`);
-        let finalCode = '';
+        let finalCode = ''
 
         if (newFunctions.length > 0) {
             console.log(chalk.yellow(
