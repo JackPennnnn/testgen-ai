@@ -8,6 +8,10 @@
     "start": "npx testgen",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "url": "https://github.com/JackPennnnn/testgen-ai.git",
+    "type": "git"
+  },
   "bin": {
     "testgen": "./build/cli.js"
   },
