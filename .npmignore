@@ -1,0 +1,11 @@
+node_modules/
+.testgen_cache/
+*.log
+__tests__
+testgen.config.json
+src/
+scripts/
+.idea/
+math.js
+.git/
+
