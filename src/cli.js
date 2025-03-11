@@ -12,23 +12,21 @@ const TestMerger = require('./core/test-merger');
 const template = require('./template/index')
 
 program
-    .command('init')
-    .description('初始化项目')
-    .action(() => {
-        if (!fs.existsSync('testgen.config.json')) {
-            fs.writeFileSync('testgen.config.json', JSON.stringify(template), 'utf-8')
-            console.log(chalk.green('✅ 配置文件创建成功！'));
-        } else {
-            console.error(chalk.red(`❌ 已存在配置文件，不要重复创建`));
-        }
-        process.exit(1); // 退出进程，并返回错误码 1
-    });
-
-
-program
     .version('1.0.0')
     .description('AI 智能测试生成工具')
+    .option('-i, --init', '初始化项目')
     .parse();
+
+const options = program.opts();
+if(options.init){
+    if (!fs.existsSync('testgen.config.json')) {
+        fs.writeFileSync('testgen.config.json', JSON.stringify(template), 'utf-8')
+        console.log(chalk.green('✅ 配置文件创建成功！'));
+    } else {
+        console.error(chalk.red(`❌ 已存在配置文件，不要重复创建`));
+    }
+    process.exit(1); // 退出进程，并返回错误码 1
+}
 
 
 if (!fs.existsSync('testgen.config.json')) {
