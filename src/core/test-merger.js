@@ -24,7 +24,8 @@ class TestMerger {
             parser: require('recast/parsers/babel'),
             tokens: true,
             range: true,
-            comment: true
+            comment: true,
+            sourceType: 'module' // 强制ESM模式
         });
     }
 
@@ -41,8 +42,8 @@ class TestMerger {
 
                 const existing = importsMap.get(key);
                 importNode.specifiers.forEach(spec => {
-                    const specStr = t.ImportDeclaration.toString(spec);
-                    if (![...existing].some(e => e === specStr)) {
+                    const specStr = recast.print(spec).code;
+                    if (![...existing].some(e => recast.print(e).code === specStr)) {
                         existing.add(spec);
                     }
                 });
@@ -50,10 +51,7 @@ class TestMerger {
         });
 
         return [...importsMap].map(([source, specs]) =>
-            builders.importDeclaration(
-                [...specs],
-                builders.stringLiteral(source)
-            )
+            builders.importDeclaration([...specs], builders.stringLiteral(source))
         );
     }
 
@@ -65,35 +63,39 @@ class TestMerger {
             this.getDescribes(ast).forEach(describeNode => {
                 const describeName = this.getDescribeName(describeNode);
                 const tests = this.getTests(describeNode);
+                const comments = this.getComments(describeNode);
 
                 if (describeMap.has(describeName)) {
-                    // 合并已有describe的测试用例
                     const existing = describeMap.get(describeName);
                     describeMap.set(describeName, {
                         node: this.mergeTestCases(existing.node, tests),
-                        comments: [...existing.comments, ...this.getComments(describeNode)]
+                        comments: [...existing.comments, ...comments]
                     });
                 } else {
-                    // 新增describe块
                     describeMap.set(describeName, {
-                        node: builders.expressionStatement(
-                            builders.callExpression(
-                                builders.identifier('describe'),
-                                [
-                                    builders.stringLiteral(describeName),
-                                    builders.arrowFunctionExpression(
-                                        [],
-                                        builders.blockStatement(tests))
-                                ]
-                            )
-                        ),
-                        comments: this.getComments(describeNode)
+                        node: this.buildDescribeNode(describeName, tests),
+                        comments
                     });
                 }
             });
         });
 
         return [...describeMap.values()];
+    }
+    // 新增AST节点构建方法
+    buildDescribeNode(name, tests) {
+        return builders.expressionStatement(
+            builders.callExpression(
+                builders.identifier('describe'),
+                [
+                    builders.stringLiteral(name),
+                    builders.arrowFunctionExpression(
+                        [],
+                        builders.blockStatement(tests)
+                    )
+                ]
+            )
+        );
     }
 
     // 辅助方法：合并测试用例并去重
@@ -110,19 +112,46 @@ class TestMerger {
 
     // 生成最终代码（保留格式）
     generateMergedCode(imports, describes) {
+        // 1. 处理imports节点
+        const importNodes = imports.map(imp => {
+            const node = imp;
+            node.comments = this.getComments(imp);
+            return node;
+        });
+
+        // 2. 处理describe节点并附加注释
+        const describeNodes = describes.map(desc => {
+            const node = desc.node;
+            node.comments = [
+                ...(node.comments || []),
+                ...desc.comments.filter(c =>
+                    !node.comments?.some(nc => nc.value === c.value)
+                )
+            ];
+            return node;
+        });
+
+        // 3. 构建合法AST结构
         const program = builders.program([
-            ...imports,
-            ...describes.flatMap(d => [
-                ...d.comments,
-                d.node
-            ])
+            ...importNodes,
+            ...describeNodes
         ]);
 
+        // 4. 添加文件头注释
+        if (describes.some(d => d.comments.length)) {
+            program.comments = [
+                builders.commentLine(' Merged Test Cases '),
+                ...describes.flatMap(d => d.comments)
+            ];
+        }
+
+        // 5. 生成代码时保留注释
         return recast.print(program, {
             quote: 'single',
             tabWidth: 2,
             trailingComma: true,
-            wrapColumn: 80
+            wrapColumn: 80,
+            comment: true  // 启用注释保留
         }).code;
     }
 

@@ -96,7 +96,6 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
                 )
             );
             spinner.succeed('生成完成！');
-
             // 合并测试代码
             if (fs.existsSync(outputPath)) {
                 const existing = fs.readFileSync(outputPath, 'utf-8');
@@ -110,7 +109,7 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
             fs.writeFileSync(outputPath, finalCode);
 
             // 更新缓存
-            cacheManager.updateCache(source, sourceCode, selected);
+            cacheManager.updateCache(source, sourceCode, [...cache.functions,...selected]);
 
             console.log(chalk.green(`✅ 成功生成${selectedFunctions.length}个测试用例，文件名称: ${outputPath}`));
         } else {

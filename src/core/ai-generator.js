@@ -14,7 +14,7 @@ class AIGenerator {
       ✅ 包含正常/边界/异常用例
       ✅ 保持与现有测试的兼容性
       ✅ 文字解释格式请保持js注释格式
-      现有测试方法：{{existingTests}}
+      ✅ 请生成ESM语法
     `;
     }
 
