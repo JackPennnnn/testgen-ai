@@ -2,26 +2,46 @@
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
-const { program } = require('commander');
+const {program} = require('commander');
 const ora = require('ora');
 const inquirer = require('inquirer');
 const CacheManager = require('./core/cache-manager');
 const DiffAnalyzer = require('./core/diff-analyzer');
 const AIGenerator = require('./core/ai-generator');
 const TestMerger = require('./core/test-merger');
+const template = require('./template/index')
+
+program
+    .command('init')
+    .description('初始化项目')
+    .action(() => {
+        if (!fs.existsSync('testgen.config.json')) {
+            fs.writeFileSync('testgen.config.json', JSON.stringify(template), 'utf-8')
+            console.log(chalk.green('✅ 配置文件创建成功！'));
+        } else {
+            console.error(chalk.red(`❌ 已存在配置文件，不要重复创建`));
+        }
+        process.exit(1); // 退出进程，并返回错误码 1
+    });
+
 
 program
     .version('1.0.0')
     .description('AI 智能测试生成工具')
     .parse();
 
+
+if (!fs.existsSync('testgen.config.json')) {
+    console.error(chalk.red(`❌ 并没有找到配置文件，请运行npx textgen init`));
+    return
+}
 const config = JSON.parse(fs.readFileSync('testgen.config.json'));
 
 (async () => {
     try {
         const spinner = ora();
         // 获取源代码路径
-        const { source } = await inquirer.prompt({
+        const {source} = await inquirer.prompt({
             type: 'input',
             name: 'source',
             message: '📁 请输入源代码文件路径:',
@@ -33,9 +53,8 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
         // 初始化核心模块
         const cacheManager = new CacheManager();
         const diffAnalyzer = new DiffAnalyzer();
-        const aiGenerator = new AIGenerator(config.openai,source);
+        const aiGenerator = new AIGenerator(config.openai, source);
         const testMerger = new TestMerger();
-
 
 
         // 获取文件缓存
@@ -63,7 +82,7 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
                     : '\n🆕 发现新方法'
             ));
             // 选择生成方法
-            const { selected } = await inquirer.prompt({
+            const {selected} = await inquirer.prompt({
                 type: 'checkbox',
                 name: 'selected',
                 pageSize: 10,
@@ -105,11 +124,11 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
             }
 
             // 写入文件
-            fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+            fs.mkdirSync(path.dirname(outputPath), {recursive: true});
             fs.writeFileSync(outputPath, finalCode);
 
             // 更新缓存
-            cacheManager.updateCache(source, sourceCode, [...cache.functions,...selected]);
+            cacheManager.updateCache(source, sourceCode, [...cache.functions, ...selected]);
 
             console.log(chalk.green(`✅ 成功生成${selectedFunctions.length}个测试用例，文件名称: ${outputPath}`));
         } else {
