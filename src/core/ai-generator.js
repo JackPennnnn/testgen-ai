@@ -3,14 +3,14 @@ const { OpenAI } = require('openai');
 class AIGenerator {
     constructor(config,source) {
         this.openai = new OpenAI( {
-            apiKey: config.apiKey,
-            baseURL: config.baseURL
+            apiKey: config.openai.apiKey,
+            baseURL: config.openai.baseURL
         });
-        this.model = config.model
+        this.model = config.openai.model
         this.basePrompt = `
       作为专业测试工程师，请为以下{{functionName}}方法生成完善的单元测试,我的方法来自于${source}。
       要求：
-      ✅ 使用{{framework}}框架
+      ✅ 使用${config?.config?.unit}框架
       ✅ 包含正常/边界/异常用例
       ✅ 保持与现有测试的兼容性
       ✅ 文字解释格式请保持js注释格式
@@ -37,7 +37,7 @@ class AIGenerator {
     buildPrompt(code, { functionName, existingTests }) {
         return this.basePrompt
                 .replace('{{framework}}', 'jest')
-                .replace('{{functionName}}', functionName.name)
+                .replace('{{functionName}}', functionName)
                 .replace('{{existingTests}}', existingTests.map(item => item.name).join(', ')) +
             `\n\n源码：\n${code}`;
     }

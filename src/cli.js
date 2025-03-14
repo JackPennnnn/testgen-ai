@@ -49,14 +49,14 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
         // const { source, output } = program.opts();
         const sourceCode = fs.readFileSync(source, 'utf-8');
         // 初始化核心模块
-        const cacheManager = new CacheManager();
+        const cacheManager = new CacheManager(config);
         const diffAnalyzer = new DiffAnalyzer();
-        const aiGenerator = new AIGenerator(config.openai, source);
+        const aiGenerator = new AIGenerator(config, source);
         const testMerger = new TestMerger();
 
 
         // 获取文件缓存
-        const cache = cacheManager.readCache(source);
+        const cache = config?.config?.cache ? cacheManager.readCache(source) : { functions: [], hash: '' };
         const currentFunctions = diffAnalyzer.parseFunctions(sourceCode);
 
         // 判断生成模式
@@ -104,19 +104,18 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
 
             // 生成测试代码
             spinner.start('🔄 正在生成测试代码...')
+            const allFunctionNames = selectedFunctions.map(f => f.name);
             const generated = await Promise.all(
-                selectedFunctions.map(fn =>
-                    aiGenerator.generateForFunction(sourceCode, {
-                        functionName: fn,
-                        existingTests: cache.functions
-                    })
-                )
+                [aiGenerator.generateForFunction(sourceCode, {
+                    functionName: allFunctionNames,
+                    existingTests: cache.functions
+                })]
             );
             spinner.succeed('生成完成！');
             // 合并测试代码
             if (fs.existsSync(outputPath)) {
                 const existing = fs.readFileSync(outputPath, 'utf-8');
-                finalCode = testMerger.merge(generated.join('\n\n'), existing);
+                finalCode = testMerger.merge(testMerger.merge(generated.join('\n\n'),''), existing);
             } else {
                 finalCode = generated.join('\n\n');
             }
@@ -125,8 +124,10 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
             fs.mkdirSync(path.dirname(outputPath), {recursive: true});
             fs.writeFileSync(outputPath, finalCode);
 
-            // 更新缓存
-            cacheManager.updateCache(source, sourceCode, [...cache.functions, ...selected]);
+            // 更新缓存(如果配置为缓存)
+            if(config?.config?.cache){
+                cacheManager.updateCache(source, sourceCode, [...cache.functions, ...selected]);
+            }
 
             console.log(chalk.green(`✅ 成功生成${selectedFunctions.length}个测试用例，文件名称: ${outputPath}`));
         } else {

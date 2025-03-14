@@ -6,9 +6,9 @@ const crypto = require('crypto');
  * 缓存管理器
  */
 class CacheManager {
-    constructor() {
+    constructor(config) {
         this.cacheDir = path.join(process.cwd(), '.testgen_cache');
-        this.ensureCacheDir();
+        config?.config?.cache && this.ensureCacheDir();
     }
 
     /**
