@@ -82,7 +82,7 @@ npm install testgen-ai
 1. 初始化，生成 **testgen.config.json**
 
     ```jsx
-    npx testgen init
+    npx testgen -i
     ```
 
 2. 配置环境变量
