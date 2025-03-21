@@ -30,7 +30,6 @@ class AIGenerator {
                 content: prompt
             }]
         });
-
         return this.postProcess(response.choices[0].message.content);
     }
 
@@ -53,7 +52,7 @@ class AIGenerator {
                     .replace(/(^\s*$\n)/gm, '')
                     .trim();
             })
-            .filter(code => code.length > 0).join(','); // 过滤空内容
+            .filter(code => code.length > 0).join('\n'); // 过滤空内容
     }
 }
 
