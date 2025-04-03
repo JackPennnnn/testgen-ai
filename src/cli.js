@@ -50,7 +50,7 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
         const sourceCode = fs.readFileSync(source, 'utf-8');
         // 初始化核心模块
         const cacheManager = new CacheManager(config);
-        const diffAnalyzer = new DiffAnalyzer();
+        const diffAnalyzer = new DiffAnalyzer(config);
         const aiGenerator = new AIGenerator(config, source);
         const testMerger = new TestMerger();
 
@@ -65,7 +65,8 @@ const config = JSON.parse(fs.readFileSync('testgen.config.json'));
             ? currentFunctions
             : currentFunctions.filter(f => !cache.functions.some(cached =>
                 cached.name === f.name &&
-                cached.type === f.type
+                cached.type === f.type &&
+                cached.body === f.body
             ));
 
         // 生成测试代码

@@ -1,6 +1,8 @@
 // src/core/diff-analyzer.js
 const parser = require('@babel/parser');
 const traverse = require('@babel/traverse').default;
+const generate = require("@babel/generator").default;
+const CacheManager = require('../core/cache-manager');
 
 class DiffAnalyzer {
     /**
@@ -24,7 +26,8 @@ class DiffAnalyzer {
                         functions.push({
                             name: path.node.id.name,
                             type: 'function',
-                            line: path.node.loc.start.line
+                            line: path.node.loc.start.line,
+                            body: CacheManager.prototype.createContentHash(generate(path.node.body).code)
                         });
                     }
                 },
@@ -35,7 +38,8 @@ class DiffAnalyzer {
                         functions.push({
                             name: path.node.id.name,
                             type: 'arrow-function',
-                            line: path.node.loc.start.line
+                            line: path.node.loc.start.line,
+                            body: CacheManager.prototype.createContentHash(generate(path.node.init.body).code)
                         });
                     }
                 },
@@ -45,7 +49,8 @@ class DiffAnalyzer {
                     functions.push({
                         name: path.node.key.name,
                         type: 'method',
-                        line: path.node.loc.start.line
+                        line: path.node.loc.start.line,
+                        body: CacheManager.prototype.createContentHash(generate(path.node.body).code)
                     });
                 },
 
@@ -54,7 +59,8 @@ class DiffAnalyzer {
                     functions.push({
                         name: path.node.key.name,
                         type: 'object-method',
-                        line: path.node.loc.start.line
+                        line: path.node.loc.start.line,
+                        body: CacheManager.prototype.createContentHash(generate(path.node.body).code)
                     });
                 }
             });
